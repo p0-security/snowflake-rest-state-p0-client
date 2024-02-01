@@ -3,6 +3,7 @@ import logging
 import time
 import requests
 
+MAX_TIME_OUT_MINS=15*60
 
 logger=logging.getLogger('snowflake_rest_state_client')
 logger.setLevel(logging.INFO)
@@ -23,7 +24,7 @@ class JobErroredException(Exception):
 def rest_state_url(base_url,tenant_id):
     '''returns the rest state url for the tenant'''
     return f'{base_url}/{tenant_id}/iam/resource/rest-state/snowflake/v1/diff'
-def processResult(response):
+def process_result(response):
     '''processes the response and returns the result'''
     if response.status_code != 200:
         if response.status_code == 404:
@@ -44,7 +45,7 @@ def snowflake_rest_state_client(base_url,tenant_id,token):
                              headers={'Authorization': f'Bearer {token}'},
                              timeout=10)
         try:
-            response=processResult(response)
+            response=process_result(response)
             logger.info("Initiated drift check  for tenant %s %s",
                         tenant_id,
                         response.json(),
@@ -53,13 +54,16 @@ def snowflake_rest_state_client(base_url,tenant_id,token):
         except JobErroredException as exc:
             raise DriftCheckFailedException from exc
     def wait_till_job_completes(run_id):
-        '''waits for the drift check job to complete'''
+        '''waits for the drift check job to complete'''        
+        start_time = time.time()
         while True:
+            if time.time() - start_time > (MAX_TIME_OUT_MINS):
+                raise JobErroredException("Job is taking too long to complete")
             response=requests.get(url=rest_state_url(base_url,tenant_id)+ f'/{run_id}',
                                 headers={'Authorization': f'Bearer {token}'},
                                 timeout=10)
             try:
-                response=processResult(response)
+                response=process_result(response)
                 logger.info("Waiting for %s to complete",
                         run_id,
                         extra={'response':response.json()})
@@ -75,7 +79,7 @@ def snowflake_rest_state_client(base_url,tenant_id,token):
                              headers={'Authorization': f'Bearer {token}'},
                              timeout=10)
         try:
-            response=processResult(response)
+            response=process_result(response)
             logger.info("Initiated Drift remediation for %s to complete",
                         run_id,
                         extra={'response':response.json()})
