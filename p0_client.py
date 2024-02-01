@@ -96,8 +96,15 @@ def run_check_and_remediation(base_url,tenant_id,token):
         if drift_run_status['status'] == 'SUCCESS':
             logger.info("Drift check completed successfully")
             initiate_drift_remediation(drift_run_result['runId'])
-            wait_till_job_completes(drift_run_result['runId'])
-            logger.info("Drift remediation completed successfully")
+            drift_remediation_status=wait_till_job_completes(drift_run_result['runId'])
+            if drift_remediation_status['status'] == 'SUCCESS':
+                logger.info("Drift remediation completed successfully")
+            else:
+                logger.error("Drift remediation failed")
+                raise DriftRemediationFailedException("Drift remediation failed")
+        else:
+            logger.error("Drift check failed")
+            raise DriftCheckFailedException("Drift check failed")
     except UnauthorizedException as e:
         logger.error("Please see if the token provided is still valid")
         raise e

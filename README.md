@@ -10,7 +10,7 @@ This is a Python client for the P0 Snowflake Rest State Management API. It is a 
 
 ## Usage
 
-1. To run example.py, you will need to set the following environment variables:
+1. To run example.py, you will need to set the following environment variables in .env file:
 
    - P0_BASE_URL : https://api.p0.app/o
    - P0_TENANT_ID : The tenant id for the tenant you want to run the check for
@@ -18,7 +18,7 @@ This is a Python client for the P0 Snowflake Rest State Management API. It is a 
 
 2. Run the example file **main**.py file. This will run a check and remediation for the given tenant.
 
-3. You can use the client to run checks and remediations for your tenant by calling the `run_check_and_remediation` function with the appropriate parameters.
+3. You can use the client to run checks and remediation for your tenant by calling the `run_check_and_remediation` function with the appropriate parameters.
 
 ```
 from p0_client import run_check_and_remediation
