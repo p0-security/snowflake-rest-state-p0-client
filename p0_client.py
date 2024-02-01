@@ -1,5 +1,6 @@
 """This module provides a client for p0 service"""
 import logging
+import os
 import time
 import requests
 
@@ -23,7 +24,7 @@ class JobErroredException(Exception):
 
 def rest_state_url(base_url,tenant_id):
     '''returns the rest state url for the tenant'''
-    return f'{base_url}/{tenant_id}/iam/resource/rest-state/snowflake/v1/diff'
+    return f'{base_url}/o/{tenant_id}/iam/resource/rest-state/snowflake/v1/diff'
 def process_result(response):
     '''processes the response and returns the result'''
     if response.status_code != 200:
@@ -31,14 +32,16 @@ def process_result(response):
             raise NotFoundException(response,"Not Found")
         elif response.status_code == 401:
             raise UnauthorizedException(response,"Unauthorized")
-    if response.headers.get('content-type') != 'application/json':
+    if response.headers.get('content-type') != 'application/json; charset=utf-8':
         raise GenericResponseException(response,"Error in response")
+    print(response.json())
     if 'error' in response.json():
-        raise JobErroredException(response.json(),"Error in response")
-    
-    return response.json()
-def snowflake_rest_state_client(base_url,tenant_id,token):
+        raise JobErroredException(response.json(),"Error in response")   
+    return response
+def snowflake_rest_state_client(tenant_id,token):
     """provides p0 client for rest state service"""
+    base_url="https://api.p0.app/" if os.environ.get('P0_BASE_URL') is None else os.environ.get('P0_BASE_URL')
+    logger.info("Using base url %s",base_url)
     def initiate_drift_check():
         '''initiates drift check  for the tenant'''
         response=requests.post(url=rest_state_url(base_url,tenant_id),
@@ -87,9 +90,9 @@ def snowflake_rest_state_client(base_url,tenant_id,token):
         except JobErroredException as exc:
             raise DriftRemediationFailedException from exc
     return  initiate_drift_check, wait_till_job_completes, initiate_drift_remediation   
-def run_check_and_remediation(base_url,tenant_id,token):
+def run_check_and_remediation(tenant_id,token):
     '''runs the drift check and remediation'''
-    initiate_drift_check, wait_till_job_completes, initiate_drift_remediation=snowflake_rest_state_client(base_url,tenant_id,token)
+    initiate_drift_check, wait_till_job_completes, initiate_drift_remediation=snowflake_rest_state_client(tenant_id,token)
     try:
         drift_run_result=initiate_drift_check()
         drift_run_status=wait_till_job_completes(drift_run_result['runId'])

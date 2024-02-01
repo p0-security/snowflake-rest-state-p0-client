@@ -13,10 +13,9 @@ logger.setLevel(logging.INFO)
 
 def run():
     '''Example Runner code for the snowflake_rest_state_client'''
-    logger.info('Started')
-    run_check_and_remediation(os.environ.get('P0_BASE_URL'),
-                                os.environ.get('P0_TENANT_ID'),
-                                os.environ.get('P0_TOKEN'))
+    logger.info('Started') 
+    run_check_and_remediation(os.environ.get('P0_TENANT_ID'),
+                              os.environ.get('P0_TOKEN'))
     logger.info('Finished')
 
 if __name__ == '__main__':
